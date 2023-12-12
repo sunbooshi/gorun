@@ -70,8 +70,14 @@ func runCommandHandler(w http.ResponseWriter, r *http.Request) {
 
 	cmd := string(body)
 
-	// 检查命令是否在白名单内
-	if _, ok := whitelist[cmd]; !ok {
+	// 按空格分割命令
+	cmdParts := strings.Fields(cmd)
+
+	// 获取命令的名称（第一个部分）
+	commandName := cmdParts[0]
+
+	// 检查命令名称是否在白名单内
+	if _, ok := whitelist[commandName]; !ok {
 		http.Error(w, "Command not allowed.", http.StatusForbidden)
 		log.Printf("Command not allowed: %s\n", cmd)
 		return
