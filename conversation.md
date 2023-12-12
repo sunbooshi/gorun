@@ -1625,7 +1625,6 @@ chmod 666 /var/log/gorun.log
 ## 贡献者
 
 - 你的名字 <your.email@example.com>
-```
 
 请注意将示例中的占位符（`yourusername`、`Your Name`、`your.email@example.com` 等）替换为您的实际信息。这个中文版本提供了关于代码功能、部署步骤以及权限问题的简要说明，您可以根据实际情况进行调整。
 
