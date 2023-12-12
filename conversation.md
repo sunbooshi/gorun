@@ -1628,3 +1628,70 @@ chmod 666 /var/log/gorun.log
 ```
 
 请注意将示例中的占位符（`yourusername`、`Your Name`、`your.email@example.com` 等）替换为您的实际信息。这个中文版本提供了关于代码功能、部署步骤以及权限问题的简要说明，您可以根据实际情况进行调整。
+
+## ❓User
+runCommandHandler应该按空格分割一下命令，只要命令在名单中即可，不校验命令参数。
+## 🚨ChatGPT
+理解了。在这种情况下，我们只需检查命令的名称，而不必关心命令的参数。以下是相应的修改：
+
+```go
+
+func runCommandHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Invalid request method. Only POST is allowed.", http.StatusMethodNotAllowed)
+		return
+	}
+
+	loadWhitelist()
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		log.Println("Error reading request body:", err)
+		return
+	}
+	defer r.Body.Close()
+
+	cmd := string(body)
+
+	// 按空格分割命令
+	cmdParts := strings.Fields(cmd)
+
+	// 获取命令的名称（第一个部分）
+	commandName := cmdParts[0]
+
+	// 检查命令名称是否在白名单内
+	if _, ok := whitelist[commandName]; !ok {
+		http.Error(w, "Command not allowed.", http.StatusForbidden)
+		log.Printf("Command not allowed: %s\n", cmd)
+		return
+	}
+
+	startTime := time.Now()
+	output, err := exec.Command("sh", "-c", cmd).Output()
+
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Error executing command: %s", err), http.StatusInternalServerError)
+		log.Printf("Error executing command: %s\n", err)
+		return
+	}
+
+	// 记录参数和输出到日志文件
+	log.Printf("Received command: %s\n", cmd)
+	log.Printf("Command output: %s\n", output)
+
+	// 记录执行的命令
+	mutex.Lock()
+	commandsExecuted = append(commandsExecuted, ExecutedCommand{
+		Command: cmd,
+		Output:  string(output),
+		Time:    startTime,
+	})
+	mutex.Unlock()
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+	w.Write(output)
+}
+```
+在这个修改中，我使用了 strings.Fields 函数将命令按空格分割成部分，并检查白名单中的命令名称。这样，我们只关心命令的名称，而不关心参数。请确保在代码的其他部分也考虑到这个更改。
